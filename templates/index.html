@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keycodes AI Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-paper-plane"></i>
+                </div>
+                <span class="logo-text">Keycodes</span>
+            </div>
+
+            <nav class="nav-section">
+                <div class="nav-item">
+                    <a href="#" class="nav-link" onclick="toggleDropdown(event)">
+                        <i class="fas fa-th"></i>
+                        Dashboard
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </a>
+                    <ul class="dropdown-menu active">
+                        <li><a href="#" onclick="showAIAssistant()">AI Assistant</a></li>
+                        <li><a href="/dashboard">Task Board</a></li>
+                    </ul>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-credit-card"></i>
+                        Billing
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-headset"></i>
+                        24/7 Support
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Greeting -->
+            <div class="top-greeting">
+                <h1>Hello, Hisham</h1>
+            </div>
+
+            <div class="content-grid">
+                <!-- Left Column - AI Assistant -->
+                <div class="left-column">
+                    <!-- AI Assistant Section -->
+                    <section id="aiAssistantSection" class="ai-assistant-card">
+                        <div class="card-header-purple">
+                            <h2 class="card-title">AI Assistant</h2>
+                            <p class="card-subtitle">Describe your task, and I'll create a ticket for you</p>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Chat Messages Container -->
+                            <div id="chatMessages" class="chat-messages">
+                                <!-- Initial content -->
+                                <div class="initial-content">
+                                    <h3 class="try-asking-title">Try asking:</h3>
+                                    <div class="quick-tasks-list">
+                                        <div class="quick-task-item"
+                                            onclick="useQuickTask('Add user authentication with OAuth and two-factor authentication')">
+                                            Add user authentication with OAuth and two-factor authentication
+                                        </div>
+                                        <div class="quick-task-item"
+                                            onclick="useQuickTask('Build a real-time dashboard with WebSocket connections and live data updates')">
+                                            Build a real-time dashboard with WebSocket connections and live data updates
+                                        </div>
+                                        <div class="quick-task-item"
+                                            onclick="useQuickTask('Create an automated backup system with encryption and cloud storage')">
+                                            Create an automated backup system with encryption and cloud storage
+                                        </div>
+                                        <div class="quick-task-item"
+                                            onclick="useQuickTask('Implement a search feature with filters, sorting, and fuzzy matching')">
+                                            Implement a search feature with filters, sorting, and fuzzy matching
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input field outside scrollable area -->
+                        <div class="card-footer">
+                            <div class="task-input-container">
+                                <input type="text" id="taskInput" class="task-input"
+                                    placeholder="Describe your task...">
+                                <button class="send-button" onclick="getAIEstimate()">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Approved Screen -->
+                    <section id="approvedScreen" class="approved-screen">
+                        <div class="ticket-header">
+                            <div class="ticket-meta">
+                                <span class="ticket-id" id="ticketId">TASK-001</span>
+                                <span class="ticket-separator">•</span>
+                                <span class="ticket-status">Review Required</span>
+                            </div>
+                            <h2 class="ticket-title" id="ticketTitle">Task Title</h2>
+                        </div>
+
+                        <form onsubmit="createTicketWithEdits(event)">
+                            <div class="ticket-details-grid">
+                                <div class="ticket-detail">
+                                    <label class="detail-label">
+                                        <i class="fas fa-clock"></i> Estimated Time
+                                    </label>
+                                    <div class="detail-value" id="estimateTime">TBD</div>
+                                </div>
+
+                                <div class="ticket-detail">
+                                    <label class="detail-label">
+                                        <i class="fas fa-flag"></i> Priority
+                                    </label>
+                                    <select id="prioritySelect" class="priority-select">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+
+                                <div class="ticket-detail full-width">
+                                    <label class="detail-label">
+                                        <i class="fas fa-key"></i> Access Required
+                                    </label>
+                                    <div class="access-icons" id="accessRequired">
+                                        <span style="color: var(--gray-500);">No specific access required</span>
+                                    </div>
+                                </div>
+
+                                <div class="ticket-detail full-width">
+                                    <label class="detail-label">
+                                        <i class="fas fa-align-left"></i> Description
+                                    </label>
+                                    <textarea id="descriptionInput" class="description-input" rows="4"
+                                        placeholder="Add or edit the task description..."></textarea>
+                                    <p class="description-note">
+                                        <i class="fas fa-info-circle"></i>
+                                        You can edit this description before creating the ticket
+                                    </p>
+                                </div>
+
+                                <div class="ticket-detail full-width">
+                                    <label class="detail-label">
+                                        <i class="fas fa-link"></i> Dependencies
+                                    </label>
+                                    <div class="dependencies-list" id="dependenciesList">
+                                        <p style="color: var(--gray-500);">No dependencies identified</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ticket-actions">
+                                <button type="submit" class="action-btn btn-primary">
+                                    <i class="fas fa-check"></i> Create
+                                </button>
+                                <button type="button" class="action-btn btn-secondary" onclick="rejectTicket()">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <!--Approved Screen -->
+                    <section id="approvedScreen" class="approved-screen">
+                        <div class="success-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h2 class="approved-title">Ticket Created Successfully!</h2>
+                        <p class="approved-message">
+                            Your task has been added to the development board and will be processed by our AI agent.
+                        </p>
+                        <div class="kanban-board">
+                            <div class="kanban-title">📋 Task Board</div>
+                            <div class="kanban-subtitle">Your ticket is now in the backlog</div>
+                        </div>
+                        <button class="create-another-btn" onclick="createAnotherTicket()">
+                            <i class="fas fa-plus"></i> Create Another Ticket
+                        </button>
+                    </section>
+
+                    <!-- Ticket Preview Section (Hidden, shown in right column) -->
+                    <div id="ticketPreviewSection" style="display: none;">
+                        <div class="ticket-header">
+                            <div class="ticket-meta">
+                                <span class="ticket-id" id="ticketId">TASK-001</span>
+                                <span class="ticket-separator">•</span>
+                                <span class="ticket-status">Review Required</span>
+                            </div>
+                            <h2 class="ticket-title" id="ticketTitle">Task Title</h2>
+                        </div>
+
+                        <form onsubmit="createTicketWithEdits(event)">
+                            <div class="ticket-details-grid">
+                                <div class="ticket-detail">
+                                    <label class="detail-label">
+                                        <i class="fas fa-clock"></i> Estimated Time
+                                    </label>
+                                    <div class="detail-value" id="estimateTime">TBD</div>
+                                </div>
+
+                                <div class="ticket-detail">
+                                    <label class="detail-label">
+                                        <i class="fas fa-flag"></i> Priority
+                                    </label>
+                                    <select id="prioritySelect" class="priority-select">
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+
+                                <div class="ticket-detail full-width">
+                                    <label class="detail-label">
+                                        <i class="fas fa-key"></i> Access Required
+                                    </label>
+                                    <div class="access-icons" id="accessRequired">
+                                        <span style="color: var(--gray-500);">No specific access required</span>
+                                    </div>
+                                </div>
+
+                                <div class="ticket-detail full-width">
+                                    <label class="detail-label">
+                                        <i class="fas fa-align-left"></i> Description
+                                    </label>
+                                    <textarea id="descriptionInput" class="description-input" rows="4"
+                                        placeholder="Add or edit the task description..."></textarea>
+                                    <p class="description-note">
+                                        <i class="fas fa-info-circle"></i>
+                                        You can edit this description before creating the ticket
+                                    </p>
+                                </div>
+
+                                <div class="ticket-detail full-width">
+                                    <label class="detail-label">
+                                        <i class="fas fa-link"></i> Dependencies
+                                    </label>
+                                    <div class="dependencies-list" id="dependenciesList">
+                                        <p style="color: var(--gray-500);">No dependencies identified</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ticket-actions">
+                                <button type="submit" class="action-btn btn-primary">
+                                    <i class="fas fa-check"></i> Connect
+                                </button>
+                                <button type="button" class="action-btn btn-secondary" onclick="rejectTicket()">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Column - Dependency & Reviews -->
+                <div class="right-column">
+                    <!-- Single White Card containing all content -->
+                    <div class="side-card-container">
+                        <!-- Dependency Section -->
+                        <div class="dependency-section">
+                            <h3 class="side-card-title">Dependency</h3>
+                            <p class="side-card-date">Thursday, 27 Nov</p>
+                        </div>
+
+                        <!-- Divider line -->
+                        <div class="card-divider"></div>
+
+                        <!-- Client Reviews Section -->
+                        <div class="card-item">
+                            <h3 class="side-card-title">Client Reviews & Feedback</h3>
+                            <p class="side-card-subtitle">Lookucs Redesign</p>
+                            <div class="check-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+
+                        <!-- Divider line -->
+                        <div class="card-divider"></div>
+
+                        <!-- Create Wireframe Section -->
+                        <div class="card-item">
+                            <h3 class="side-card-title">Create Wireframe</h3>
+                            <p class="side-card-subtitle">Keycodes design</p>
+                            <div class="check-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ===== GLOBAL VARIABLES =====
+        let currentEstimate = null;
+        let currentTask = null;
+        let currentTicketId = null;
+        let currentTicketNumber = null;
+        let currentTicketTitle = null;
+
+        // ===== DROPDOWN TOGGLE =====
+        function toggleDropdown(event) {
+            event.preventDefault();
+            const navItem = event.target.closest('.nav-item');
+            const dropdown = navItem.querySelector('.dropdown-menu');
+
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+                const icon = navItem.querySelector('.dropdown-icon');
+                icon.style.transform = dropdown.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        }
+
+        // ===== USE QUICK TASK =====
+        function useQuickTask(task) {
+            document.getElementById('taskInput').value = task;
+            // Don't call getAIEstimate() - user should click send button
+        }
+
+        // ===== GET ACCESS ICON =====
+        function getAccessIcon(access) {
+            const accessLower = access.toLowerCase();
+
+            if (accessLower.includes('github') || accessLower.includes('git')) {
+                return { icon: 'fab fa-github', class: 'github' };
+            } else if (accessLower.includes('database') || accessLower.includes('db') || accessLower.includes('sql')) {
+                return { icon: 'fas fa-database', class: 'database' };
+            } else if (accessLower.includes('aws') || accessLower.includes('cloud') || accessLower.includes('s3')) {
+                return { icon: 'fab fa-aws', class: 'cloud' };
+            } else if (accessLower.includes('docker')) {
+                return { icon: 'fab fa-docker', class: 'docker' };
+            } else if (accessLower.includes('api')) {
+                return { icon: 'fas fa-plug', class: 'api' };
+            } else if (accessLower.includes('frontend') || accessLower.includes('react') || accessLower.includes('ui')) {
+                return { icon: 'fab fa-react', class: 'frontend' };
+            } else if (accessLower.includes('backend') || accessLower.includes('server') || accessLower.includes('node')) {
+                return { icon: 'fab fa-node-js', class: 'backend' };
+            } else if (accessLower.includes('security') || accessLower.includes('auth')) {
+                return { icon: 'fas fa-shield-alt', class: 'security' };
+            } else if (accessLower.includes('devops') || accessLower.includes('ci/cd')) {
+                return { icon: 'fas fa-code-branch', class: 'devops' };
+            } else {
+                return { icon: 'fas fa-key', class: 'auth' };
+            }
+        }
+
+        // ===== GET AI ESTIMATE =====
+        async function getAIEstimate() {
+            const taskInput = document.getElementById('taskInput');
+            const task = taskInput.value.trim();
+
+            if (!task) {
+                alert('Please describe your task');
+                return;
+            }
+
+            currentTask = task;
+            const sendButton = document.querySelector('.send-button');
+            sendButton.disabled = true;
+
+            // Hide initial content
+            const initialContent = document.querySelector('.initial-content');
+            if (initialContent) {
+                initialContent.classList.add('hidden');
+            }
+
+            // Get chat messages container
+            const chatMessages = document.getElementById('chatMessages');
+
+            // Add user message bubble (purple)
+            const userBubble = document.createElement('div');
+            userBubble.className = 'chat-bubble user';
+            userBubble.textContent = task;
+            chatMessages.appendChild(userBubble);
+
+            // Clear input
+            taskInput.value = '';
+
+            // Add AI thinking bubble
+            const thinkingBubble = document.createElement('div');
+            thinkingBubble.className = 'ai-thinking-bubble';
+            thinkingBubble.id = 'thinkingBubble';
+            thinkingBubble.innerHTML = `
+                <div class="ai-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    AI is analyzing your request<span class="thinking-dots-inline">
+                        <span>.</span><span>.</span><span>.</span>
+                    </span>
+                </div>
+            `;
+            chatMessages.appendChild(thinkingBubble);
+
+            // Scroll to bottom
+            const cardBody = document.querySelector('.card-body');
+            cardBody.scrollTop = cardBody.scrollHeight;
+
+            try {
+                const response = await fetch('/api/estimate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ task })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentEstimate = data.estimate;
+                    currentTicketId = data.ticket_id;
+                    currentTicketNumber = data.ticket_number;
+                    currentTicketTitle = data.title || task;
+
+                    // Replace entire AI Assistant with Ticket Preview
+                    displayTicketPreview(data);
+                } else {
+                    const errorMsg = data.error || 'Failed to get estimate';
+
+                    // Remove thinking bubble
+                    thinkingBubble.remove();
+
+                    // Add error message
+                    const errorBubble = document.createElement('div');
+                    errorBubble.className = 'chat-bubble ai';
+                    errorBubble.innerHTML = `
+                        <div class="ai-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            ${errorMsg.includes('503') || errorMsg.includes('overloaded') ?
+                            '⏳ AI service is busy. Please try again in a moment.' :
+                            'Error: ' + errorMsg}
+                        </div>
+                    `;
+                    chatMessages.appendChild(errorBubble);
+                    cardBody.scrollTop = cardBody.scrollHeight;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                thinkingBubble.remove();
+
+                const errorBubble = document.createElement('div');
+                errorBubble.className = 'chat-bubble ai';
+                errorBubble.innerHTML = `
+                    <div class="ai-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        Failed to connect to server
+                    </div>
+                `;
+                chatMessages.appendChild(errorBubble);
+                cardBody.scrollTop = cardBody.scrollHeight;
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        // ===== DISPLAY TICKET PREVIEW =====
+        function displayTicketPreview(data) {
+            const estimate = data.estimate;
+            currentTicketTitle = data.title || data.task || currentTask;
+
+            // Store data for later submission
+            window.currentTicketData = {
+                ticket_id: data.ticket_id,
+                ticket_number: data.ticket_number,
+                estimate: estimate,
+                title: currentTicketTitle
+            };
+
+            // Get AI Assistant card elements
+            const cardHeader = document.querySelector('.card-header-purple');
+            const cardBody = document.querySelector('.card-body');
+            const cardFooter = document.querySelector('.card-footer');
+
+            // Update header to "Ticket Preview"
+            cardHeader.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <h2 class="card-title" style="margin: 0;">Ticket Preview</h2>
+        <span style="font-size: 0.9rem; opacity: 0.9; font-weight: 500;">${data.ticket_number}</span>
+    </div>
+            `;
+
+            // 2. Adjust Body to fill space and remove extra white gap
+            cardBody.style.height = 'calc(100% - 130px)'; // Adjusting based on header/footer height
+            cardBody.style.maxHeight = 'none'; // Remove the fixed limit
+            cardBody.style.display = 'flex';
+            cardBody.style.flexDirection = 'column';
+            cardBody.style.overflowY = 'auto';
+            cardBody.innerHTML = `
+                <div class="ticket-preview-full">
+        <div class="ticket-title-row" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h2 class="ticket-title-display" style="flex: 1;">${currentTicketTitle}</h2>
+            
+            <select id="editablePriority" onchange="updatePriorityStyle(this)" 
+                style="padding: 6px 12px; border-radius: 20px; border: 1px solid #e5e7eb; font-weight: 600; cursor: pointer; outline: none;
+                ${estimate.priority.toLowerCase() === 'high' ? 'background: #fee2e2; color: #dc2626;' :
+                    estimate.priority.toLowerCase() === 'medium' ? 'background: #fef3c7; color: #d97706;' :
+                        'background: #f3f4f6; color: #4b5563;'}">
+                
+                <option value="high" style="color: #dc2626; background: white;" ${estimate.priority.toLowerCase() === 'high' ? 'selected' : ''}>🚩 High</option>
+                <option value="medium" style="color: #d97706; background: white;" ${estimate.priority.toLowerCase() === 'medium' ? 'selected' : ''}>🚩 Medium</option>
+                <option value="low" style="color: #4b5563; background: white;" ${estimate.priority.toLowerCase() === 'low' ? 'selected' : ''}>🚩 Low</option>
+            </select>
+        </div>
+
+                    <div class="ticket-detail-section">
+                        <div class="section-icon"><i class="fas fa-clock"></i></div>
+                        <div class="section-content">
+                            <strong>Estimated Time:</strong> ${estimate.estimated_time || 'TBD'}
+                        </div>
+                    </div>
+
+                    <div class="ticket-detail-section">
+                        <div class="section-icon"><i class="fas fa-key"></i></div>
+                        <div class="section-content">
+                            <strong>Access Required:</strong>
+                            <div class="access-tags">
+                                ${estimate.required_access && estimate.required_access.length > 0 ?
+                    (Array.isArray(estimate.required_access) ? estimate.required_access : [estimate.required_access])
+                        .map(access => {
+                            const iconData = getAccessIcon(access);
+                            return `<span class="access-tag"><i class="${iconData.icon}"></i> ${access}</span>`;
+                        }).join('') :
+                    '<span>No specific access required</span>'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ticket-detail-section">
+                        <div class="section-icon"><i class="fas fa-align-left"></i></div>
+                        <div class="section-content">
+                            <strong>Description: Phases & Steps:</strong>
+                            <textarea id="editableReasoning" class="description-content" 
+            style="width: 100%; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px; font-family: inherit; font-size: inherit; margin-top: 8px;" 
+            rows="6">${estimate.reasoning || data.task || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="ticket-detail-section">
+                        <div class="section-icon"><i class="fas fa-link"></i></div>
+                        <div class="section-content">
+                            <strong>Dependencies:</strong>
+                            ${estimate.dependencies && estimate.dependencies.length > 0 ?
+                    '<ul class="dependencies-ul">' + (Array.isArray(estimate.dependencies) ? estimate.dependencies : [estimate.dependencies])
+                        .map(dep => `<li>${dep}</li>`).join('') + '</ul>' :
+                    '<p>No dependencies identified</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Replace footer with action buttons
+            cardFooter.innerHTML = `
+                <div class="ticket-action-buttons">
+                    <button class="action-btn-large btn-connect-large" onclick="approveTicket(event)">
+                        <i class="fas fa-check"></i> Connect
+                    </button>
+                    <button class="action-btn-large btn-reject-large" onclick="rejectTicket()">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            `;
+        }
+
+        // ===== CREATE TICKET =====
+        async function createTicketWithEdits(event) {
+            event.preventDefault();
+
+            const button = event.target.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+            const editedPriority = document.getElementById('prioritySelect').value;
+            const editedDescription = document.getElementById('descriptionInput').value;
+
+            try {
+                const response = await fetch('/api/create-ticket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticket_id: currentTicketId,
+                        ticket_number: currentTicketNumber,
+                        task: currentTask,
+                        title: currentTicketTitle || document.getElementById('ticketTitle').textContent,
+                        edited_priority: editedPriority,
+                        edited_description: editedDescription,
+                        estimate: currentEstimate
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('ticketPreviewSection').classList.remove('active');
+                    document.getElementById('approvedScreen').classList.add('active');
+
+                    document.getElementById('approvedScreen').scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                } else {
+                    alert('Error creating ticket: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to create ticket');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-check"></i> Connect';
+            }
+        }
+
+        // ===== APPROVE TICKET =====
+        async function approveTicket(event) {
+            event.preventDefault();
+            const editedReasoning = document.getElementById('editableReasoning').value;
+            const editedPriority = document.getElementById('editablePriority').value;
+            const button = event.target.closest('button');
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+            try {
+                const response = await fetch('/api/create-ticket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticket_id: currentTicketId,
+                        ticket_number: currentTicketNumber,
+                        task: currentTask,
+                        title: currentTicketTitle,
+                        edited_priority: editedPriority,
+                        edited_description: editedReasoning,
+                        estimate: currentEstimate
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show success message in chat
+                    const chatMessages = document.getElementById('chatMessages');
+                    if (chatMessages) {
+                        const successBubble = document.createElement('div');
+                        successBubble.className = 'chat-bubble ai';
+                        successBubble.innerHTML = `
+                            <div class="ai-icon">
+                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                            </div>
+                            <div class="message-content">
+                                <strong>Ticket Created Successfully!</strong><br>
+                                Your task has been added to the development board and will be processed by our AI agent.
+                            </div>
+                        `;
+                        chatMessages.appendChild(successBubble);
+
+                        const cardBody = document.querySelector('.card-body');
+                        cardBody.scrollTop = cardBody.scrollHeight;
+
+                        // Wait 2 seconds then restore AI Assistant view
+                        setTimeout(() => {
+                            // Restore AI Assistant header
+                            const cardHeader = document.querySelector('.card-header-purple');
+                            cardHeader.innerHTML = `
+                                <h2 class="card-title">AI Assistant</h2>
+                                <p class="card-subtitle">Describe your task, and I'll create a ticket for you</p>
+                            `;
+
+                            // Restore card body with initial content
+                            cardBody.style.maxHeight = '340px';
+                            cardBody.style.overflow = 'scroll';
+                            cardBody.innerHTML = `
+                                <div id="chatMessages" class="chat-messages">
+                                    <div class="initial-content">
+                                        <h3 class="try-asking-title">Try asking:</h3>
+                                        <div class="quick-tasks-list">
+                                            <div class="quick-task-item"
+                                                onclick="useQuickTask('Add user authentication with OAuth and two-factor authentication')">
+                                                Add user authentication with OAuth and two-factor authentication
+                                            </div>
+                                            <div class="quick-task-item"
+                                                onclick="useQuickTask('Build a real-time dashboard with WebSocket connections and live data updates')">
+                                                Build a real-time dashboard with WebSocket connections and live data updates
+                                            </div>
+                                            <div class="quick-task-item"
+                                                onclick="useQuickTask('Create an automated backup system with encryption and cloud storage')">
+                                                Create an automated backup system with encryption and cloud storage
+                                            </div>
+                                            <div class="quick-task-item"
+                                                onclick="useQuickTask('Implement a search feature with filters, sorting, and fuzzy matching')">
+                                                Implement a search feature with filters, sorting, and fuzzy matching
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                            // Restore footer with input
+                            const cardFooter = document.querySelector('.card-footer');
+                            cardFooter.innerHTML = `
+                                <div class="task-input-container">
+                                    <input type="text" id="taskInput" class="task-input" placeholder="Describe your task...">
+                                    <button class="send-button" onclick="getAIEstimate()">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            `;
+
+                            // Reset state
+                            currentEstimate = null;
+                            currentTask = null;
+                            currentTicketId = null;
+                            currentTicketNumber = null;
+                            currentTicketTitle = null;
+                        }, 2000);
+                    } else {
+                        alert('Ticket created successfully!');
+
+                        // Restore AI Assistant view after alert
+                        const cardHeader = document.querySelector('.card-header-purple');
+                        cardHeader.innerHTML = `
+                            <h2 class="card-title">AI Assistant</h2>
+                            <p class="card-subtitle">Describe your task, and I'll create a ticket for you</p>
+                        `;
+
+                        // Restore card body with initial content
+                        const cardBody = document.querySelector('.card-body');
+                        cardBody.style.maxHeight = '340px';
+                        cardBody.style.overflow = 'scroll';
+                        cardBody.innerHTML = `
+                            <div id="chatMessages" class="chat-messages">
+                                <div class="initial-content">
+                                    <h3 class="try-asking-title">Try asking:</h3>
+                                    <div class="quick-tasks-list">
+                                        <div class="quick-task-item"
+                                            onclick="useQuickTask('Add user authentication with OAuth and two-factor authentication')">
+                                            Add user authentication with OAuth and two-factor authentication
+                                        </div>
+                                        <div class="quick-task-item"
+                                            onclick="useQuickTask('Build a real-time dashboard with WebSocket connections and live data updates')">
+                                            Build a real-time dashboard with WebSocket connections and live data updates
+                                        </div>
+                                        <div class="quick-task-item"
+                                            onclick="useQuickTask('Create an automated backup system with encryption and cloud storage')">
+                                            Create an automated backup system with encryption and cloud storage
+                                        </div>
+                                        <div class="quick-task-item"
+                                            onclick="useQuickTask('Implement a search feature with filters, sorting, and fuzzy matching')">
+                                            Implement a search feature with filters, sorting, and fuzzy matching
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        // Restore footer with input
+                        const cardFooter = document.querySelector('.card-footer');
+                        cardFooter.innerHTML = `
+                            <div class="task-input-container">
+                                <input type="text" id="taskInput" class="task-input" placeholder="Describe your task...">
+                                <button class="send-button" onclick="getAIEstimate()">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        `;
+
+                        // Reset state
+                        currentEstimate = null;
+                        currentTask = null;
+                        currentTicketId = null;
+                        currentTicketNumber = null;
+                        currentTicketTitle = null;
+                    }
+                } else {
+                    alert('Error creating ticket: ' + (data.error || 'Unknown error'));
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-check"></i> Connect';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to create ticket');
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-check"></i> Connect';
+            }
+        }
+
+        // ===== REJECT TICKET =====
+        function rejectTicket() {
+            if (confirm('Are you sure you want to reject this ticket?')) {
+                // Restore AI Assistant header
+                const cardHeader = document.querySelector('.card-header-purple');
+                cardHeader.innerHTML = `
+                    <h2 class="card-title">AI Assistant</h2>
+                    <p class="card-subtitle">Describe your task, and I'll create a ticket for you</p>
+                `;
+
+                // Restore card body with initial content
+                const cardBody = document.querySelector('.card-body');
+                cardBody.style.maxHeight = '340px';
+                cardBody.style.overflow = 'scroll';
+                cardBody.innerHTML = `
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="initial-content">
+                            <h3 class="try-asking-title">Try asking:</h3>
+                            <div class="quick-tasks-list">
+                                <div class="quick-task-item"
+                                    onclick="useQuickTask('Add user authentication with OAuth and two-factor authentication')">
+                                    Add user authentication with OAuth and two-factor authentication
+                                </div>
+                                <div class="quick-task-item"
+                                    onclick="useQuickTask('Build a real-time dashboard with WebSocket connections and live data updates')">
+                                    Build a real-time dashboard with WebSocket connections and live data updates
+                                </div>
+                                <div class="quick-task-item"
+                                    onclick="useQuickTask('Create an automated backup system with encryption and cloud storage')">
+                                    Create an automated backup system with encryption and cloud storage
+                                </div>
+                                <div class="quick-task-item"
+                                    onclick="useQuickTask('Implement a search feature with filters, sorting, and fuzzy matching')">
+                                    Implement a search feature with filters, sorting, and fuzzy matching
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Restore footer with input
+                const cardFooter = document.querySelector('.card-footer');
+                cardFooter.innerHTML = `
+                    <div class="task-input-container">
+                        <input type="text" id="taskInput" class="task-input" placeholder="Describe your task...">
+                        <button class="send-button" onclick="getAIEstimate()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                `;
+
+                // Reset state
+                currentEstimate = null;
+                currentTask = null;
+                currentTicketId = null;
+                currentTicketNumber = null;
+                currentTicketTitle = null;
+            }
+        }
+
+        // ===== CREATE ANOTHER TICKET =====
+        function createAnotherTicket() {
+            document.getElementById('approvedScreen').classList.remove('active');
+            document.getElementById('aiAssistantSection').style.display = 'flex';
+            document.getElementById('taskInput').value = '';
+            currentEstimate = null;
+            currentTask = null;
+            currentTicketId = null;
+            currentTicketNumber = null;
+
+            document.getElementById('aiAssistantSection').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+        // ===== SHOW AI ASSISTANT =====
+        function showAIAssistant() {
+            document.getElementById('approvedScreen').classList.remove('active');
+            document.getElementById('ticketPreviewSection').classList.remove('active');
+            document.getElementById('aiAssistantSection').style.display = 'flex';
+            document.getElementById('aiAssistantSection').scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+
+        // ===== ENTER KEY SUPPORT =====
+        document.getElementById('taskInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                getAIEstimate();
+            }
+        });
+        function updatePriorityStyle(select) {
+            const val = select.value;
+            if (val === 'high') {
+                select.style.backgroundColor = '#fee2e2';
+                select.style.color = '#dc2626';
+            } else if (val === 'medium') {
+                select.style.backgroundColor = '#fef3c7';
+                select.style.color = '#d97706';
+            } else if (val === 'low') {
+                select.style.backgroundColor = '#f3f4f6';
+                select.style.color = '#4b5563';
+            }
+        }
+    </script>
+</body>
+
+</html>
