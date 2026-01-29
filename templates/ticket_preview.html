@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Preview</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='ticket_preview.css') }}">
+</head>
+
+<body>
+    <div class="ticket-preview-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <span id="ticket-id" class="ticket-id">Loading...</span>
+                <span id="priority" class="priority priority-medium">MEDIUM</span>
+            </div>
+            
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Ticket Info (Read-only) -->
+            <div class="ticket-info">
+                <h1 id="ticket-title" class="ticket-title">Loading...</h1>
+                <div id="ticket-description" class="ticket-description">
+                    Loading description...
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Access Required</div>
+                        <div id="tp-access" class="info-value">
+                            <!-- Access items will be added here -->
+                            <span class="no-access">No access required</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Progress</div>
+                        <div id="progress" class="info-value">0%</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Estimated Time</div>
+                        <div id="estimated-time" class="info-value">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Created</div>
+                        <div id="created-at" class="info-value">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editable: Status -->
+            <div class="editable-section">
+                <div class="section-title">
+                    <i class="fas fa-flag"></i> Status
+                </div>
+                <select id="status-select" class="status-select">
+                    <option value="new">New</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="review">Review</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+
+            <!-- Editable: Tags -->
+            <div class="editable-section">
+                <div class="section-title">
+                    <i class="fas fa-tags"></i> Tags
+                </div>
+                <div id="tags-container" class="tags-container">
+                    <!-- Tags will be added here -->
+                    <div class="no-tags">No tags yet</div>
+                </div>
+                <div class="tag-input-container">
+                    <input type="text" id="tag-input" class="tag-input" placeholder="Add a tag...">
+                    <button id="add-tag-btn" class="add-tag-btn">Add</button>
+                </div>
+            </div>
+
+            <!-- Timeline (Read-only) -->
+            <div class="timeline">
+                <div class="section-title">
+                    <i class="fas fa-history"></i> Timeline
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-label">Created:</span>
+                    <span id="timeline-created" class="timeline-value">-</span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-label">Started:</span>
+                    <span id="timeline-started" class="timeline-value">-</span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-label">Completed:</span>
+                    <span id="timeline-completed" class="timeline-value">-</span>
+                </div>
+                <div class="timeline-item">
+                    <span class="timeline-label">Last Updated:</span>
+                    <span id="timeline-updated" class="timeline-value">-</span>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <button id="save-btn" class="save-btn" onclick="saveChanges()">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let ticketId = null;
+        let currentTicket = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            ticketId = urlParams.get('ticket_id');
+
+            if (!ticketId) {
+                alert('No ticket ID provided');
+                window.close();
+                return;
+            }
+
+            loadTicketData();
+            setupEventListeners();
+        });
+
+        async function loadTicketData() {
+            try {
+                showLoading(true);
+
+                const response = await fetch(`/api/ticket/${ticketId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    currentTicket = data.ticket;
+                    displayTicketData(currentTicket);
+                } else {
+                    throw new Error(data.error || 'Failed to load ticket');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load ticket: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayTicketData(ticket) {
+            // Header
+            document.getElementById('ticket-id').textContent = ticket.ticket_number || `TKT-${ticket.id}`;
+
+            // Priority
+            const priority = ticket.priority || 'medium';
+            const priorityEl = document.getElementById('priority');
+            priorityEl.className = `priority priority-${priority}`;
+            priorityEl.textContent = priority.toUpperCase();
+
+            // Ticket info
+            document.getElementById('ticket-title').textContent = ticket.title;
+            document.getElementById('ticket-description').textContent = ticket.description || 'No description provided.';
+            document.getElementById('progress').textContent = (ticket.progress_percentage || 0) + '%';
+            document.getElementById('estimated-time').textContent = ticket.estimated_time || '-';
+            document.getElementById('created-at').textContent = formatDate(ticket.created_at);
+
+            // Access Required (REPLACED Category)
+            const accessContainer = document.getElementById('tp-access');
+            if (ticket.access_required && ticket.access_required.length > 0) {
+                accessContainer.innerHTML = '';
+                ticket.access_required.forEach(access => {
+                    const accessEl = document.createElement('span');
+                    accessEl.className = 'access-item';
+                    accessEl.textContent = access;
+                    accessContainer.appendChild(accessEl);
+                });
+            } else {
+                accessContainer.innerHTML = '<span class="no-access">No access required</span>';
+            }
+
+            // Status
+            document.getElementById('status-select').value = ticket.status || 'new';
+
+            // Tags
+            displayTags(ticket.tags || []);
+
+            // Timeline
+            document.getElementById('timeline-created').textContent = formatDate(ticket.created_at);
+            document.getElementById('timeline-started').textContent = formatDate(ticket.started_at) || '-';
+            document.getElementById('timeline-completed').textContent = formatDate(ticket.completed_at) || '-';
+            document.getElementById('timeline-updated').textContent = formatDate(ticket.updated_at) || '-';
+        }
+        function displayTags(tags) {
+            const container = document.getElementById('tags-container');
+            container.innerHTML = '';
+
+            if (tags.length === 0) {
+                container.innerHTML = '<div class="no-tags">No tags yet</div>';
+                return;
+            }
+
+            tags.forEach(tag => {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tag';
+                tagElement.innerHTML = `
+                    <span>${tag}</span>
+                    <button class="tag-remove" onclick="removeTag('${tag}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                container.appendChild(tagElement);
+            });
+        }
+
+        function setupEventListeners() {
+            // Add tag on button click
+            document.getElementById('add-tag-btn').addEventListener('click', addTag);
+
+            // Add tag on Enter key
+            document.getElementById('tag-input').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addTag();
+                }
+            });
+        }
+
+        function addTag() {
+            const input = document.getElementById('tag-input');
+            const tag = input.value.trim();
+
+            if (!tag) return;
+
+            // Get current tags
+            const container = document.getElementById('tags-container');
+            const noTags = container.querySelector('.no-tags');
+            if (noTags) noTags.remove();
+
+            // Add new tag
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag';
+            tagElement.innerHTML = `
+                <span>${tag}</span>
+                <button class="tag-remove" onclick="removeTag('${tag}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            container.appendChild(tagElement);
+
+            // Clear input
+            input.value = '';
+            input.focus();
+        }
+
+        function removeTag(tagToRemove) {
+            const container = document.getElementById('tags-container');
+            const tags = container.querySelectorAll('.tag');
+
+            tags.forEach(tag => {
+                if (tag.querySelector('span').textContent === tagToRemove) {
+                    tag.remove();
+                }
+            });
+
+            // Show "No tags" if empty
+            if (container.children.length === 0) {
+                container.innerHTML = '<div class="no-tags">No tags yet</div>';
+            }
+        }
+
+async function saveChanges() {
+    try {
+        showLoading(true);
+        
+        // Get current tags
+        const tags = Array.from(
+            document.querySelectorAll('#tags-container .tag span')
+        ).map(span => span.textContent);
+        
+        // Get status
+        const status = document.getElementById('status-select').value;
+        
+        const updatedData = {
+            status: status,
+            tags: tags
+        };
+        
+        const response = await fetch(`/api/ticket/${ticketId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatedData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Store old status before updating
+            const oldStatus = currentTicket.status;
+            
+            // Update ticket data with response
+            if (data.ticket) {
+                currentTicket.status = data.ticket.status;
+                currentTicket.tags = data.ticket.tags;
+                currentTicket.updated_at = data.ticket.updated_at;
+                currentTicket.started_at = data.ticket.started_at;
+                currentTicket.completed_at = data.ticket.completed_at;
+                
+                // Update timeline display
+                document.getElementById('timeline-updated').textContent = 'Just now';
+                if (data.ticket.started_at) {
+                    document.getElementById('timeline-started').textContent = formatDate(data.ticket.started_at);
+                }
+                if (data.ticket.completed_at) {
+                    document.getElementById('timeline-completed').textContent = formatDate(data.ticket.completed_at);
+                }
+            }
+            
+            // FIX: Only send to ONE target, not both
+            let messageTarget = null;
+            let targetType = '';
+            
+            // Check which window relationship exists
+            if (window.opener && !window.opener.closed) {
+                messageTarget = window.opener;
+                targetType = 'opener';
+            } else if (window.parent !== window) {
+                messageTarget = window.parent;
+                targetType = 'parent';
+            }
+            
+            // Send message only once
+            if (messageTarget) {
+                console.log(`Sending message to ${targetType}:`, {
+                    type: 'ticketUpdated',
+                    ticketId: ticketId,
+                    oldStatus: oldStatus,
+                    newStatus: status,
+                    data: updatedData
+                });
+                
+                messageTarget.postMessage({
+                    type: 'ticketUpdated',
+                    ticketId: ticketId,
+                    oldStatus: oldStatus,
+                    newStatus: status,
+                    data: updatedData
+                }, '*');
+            } else {
+                console.log('No message target found (opener or parent)');
+            }
+            
+            // Show notification - ONLY ONCE HERE
+            showNotification('Ticket updated successfully!', 'success');
+            
+            // Optional: Auto-close after 2 seconds
+            setTimeout(() => {
+                if (window.opener && !window.opener.closed) {
+                    window.close();
+                }
+            }, 2000);
+            
+        } else {
+            throw new Error(data.error || 'Failed to update ticket');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Failed to save: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}  
+// Add notification function if not exists
+function showNotification(message, type = 'info') {
+    // Simple notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        color: white;
+        border-radius: 6px;
+        z-index: 10000;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Add animation style
+if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+        function showLoading(loading) {
+            const saveBtn = document.getElementById('save-btn');
+            if (loading) {
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                saveBtn.disabled = true;
+                document.body.classList.add('loading');
+            } else {
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                saveBtn.disabled = false;
+                document.body.classList.remove('loading');
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (e) {
+                return '-';
+            }
+        }
+    </script>
+</body>
+
+</html>

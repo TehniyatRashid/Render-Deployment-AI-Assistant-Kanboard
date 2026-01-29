@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Dashboard with Graphical Stats</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard_style.css') }}">
+</head>
+
+<body>
+    <!-- Sidebar (Updated to match index.html) -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            <span class="logo-text">Keycodes</span>
+        </div>
+
+        <nav class="nav-section">
+            <div class="nav-item">
+                <a href="#" class="nav-link" onclick="toggleDropdown(event)">
+                    <i class="fas fa-th"></i>
+                    Dashboard
+                    <i class="fas fa-chevron-down dropdown-icon"></i>
+                </a>
+                <ul class="dropdown-menu active">
+                    <li><a href="/" onclick="showAIAssistant()">AI Assistant</a></li>
+                    <li><a href="/dashboard">Task Board</a></li>
+                </ul>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-credit-card"></i>
+                    Billing
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-headset"></i>
+                    24/7 Support
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h2>Kanban Dashboard</h2>
+            <div class="user-info main-user">
+                <div class="user-avatar main-avatar">H</div>
+                <div>
+                    <div style="font-weight: 600;">Hisham</div>
+                    <div style="font-size: 12px; opacity: 0.8;">Admin</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 Equal Tiles Dashboard -->
+        <div class="stats-dashboard">
+            <!-- NEW TICKETS Tile -->
+            <div class="stat-card">
+                <div class="stat-card-title">NEW</div>
+                <div class="stat-main-value">127</div>
+                <div class="stat-subtitle">12% from last month <span class="stat-change positive">+12%</span></div>
+                <div class="trend-label">MONTHLY TREND</div>
+                <div class="chart-container">
+                    <canvas id="newChart"></canvas>
+                </div>
+            </div>
+
+            <!-- IN PROGRESS Tile with Circular Chart -->
+            <div class="stat-card">
+                <div class="stat-card-title">IN PROGRESS</div>
+                <div class="stat-main-value">43</div>
+                <div class="stat-subtitle">- No change <span class="stat-change neutral">0%</span></div>
+                <div class="trend-label">COMPLETION STATUS</div>
+                <div class="circular-chart-container">
+                    <canvas id="progressCircularChart" class="circular-chart"></canvas>
+                    <div class="circular-percentage">68%</div>
+                </div>
+            </div>
+
+            <!-- COMPLETED Tile -->
+            <div class="stat-card">
+                <div class="stat-card-title">COMPLETED</div>
+                <div class="stat-main-value">84</div>
+                <div class="stat-subtitle">23% from last month <span class="stat-change positive">+23%</span></div>
+                <div class="trend-label">6-MONTH PERFORMANCE</div>
+                <div class="chart-container">
+                    <canvas id="completedChart"></canvas>
+                </div>
+            </div>
+
+            <!-- ON HOLD Tile with Linear Progress Bars -->
+            <div class="stat-card">
+                <div class="stat-card-title">ON HOLD</div>
+                <div class="stat-main-value">32</div>
+                <div class="stat-subtitle">2 from last week <span class="stat-change negative">-6%</span></div>
+                <div class="trend-label">BY CATEGORY</div>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Pending Reviews</span>
+                        <span>45%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill purple" style="width: 45%"></div>
+                    </div>
+                    <div class="progress-label">
+                        <span>Access Issue</span>
+                        <span>30%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill blue" style="width: 30%"></div>
+                    </div>
+                    <div class="progress-label">
+                        <span>Code Quality</span>
+                        <span>15%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill green" style="width: 15%"></div>
+                    </div>
+                    <div class="progress-label">
+                        <span>Other</span>
+                        <span>10%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill orange" style="width: 10%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kanban Board -->
+        <div class="kanban-board">
+            <div class="board-header">
+                <h3>Project Tasks</h3>
+            </div>
+
+            <div class="columns-container">
+                <div class="column" id="new-column">
+                    <div class="column-header">
+                        <div class="column-title">New</div>
+                        <div class="ticket-count">0</div>
+                    </div>
+                    <div class="ticket-list" id="new-tickets"></div>
+                </div>
+
+                <div class="column" id="progress-column">
+                    <div class="column-header">
+                        <div class="column-title">In Progress</div>
+                        <div class="ticket-count">0</div>
+                    </div>
+                    <div class="ticket-list" id="progress-tickets"></div>
+                </div>
+
+                <div class="column" id="blocked-column">
+                    <div class="column-header">
+                        <div class="column-title">Blocked</div>
+                        <div class="ticket-count">0</div>
+                    </div>
+                    <div class="ticket-list" id="blocked-tickets"></div>
+                </div>
+
+                <div class="column" id="review-column">
+                    <div class="column-header">
+                        <div class="column-title">Review</div>
+                        <div class="ticket-count">1</div>
+                    </div>
+                    <div class="ticket-list" id="review-tickets"></div>
+                </div>
+
+                <div class="column" id="completed-column">
+                    <div class="column-header">
+                        <div class="column-title">Completed</div>
+                        <div class="ticket-count">0</div>
+                    </div>
+                    <div class="ticket-list" id="completed-tickets"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Preview Modal -->
+    <div id="iframeOverlay" class="ticket-preview-overlay" style="display:none;">
+        <div class="ticket-preview-window">
+            <div style="position: absolute; right: 20px; top: 15px; z-index: 10001;">
+                <button onclick="document.getElementById('iframeOverlay').style.display='none'"
+                    style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white; border-radius: 4px; padding: 4px 10px; cursor: pointer;">
+                    ✕ Close
+                </button>
+            </div>
+            <iframe id="ticketIframe" src=""
+                style="width:100%; height:100%; border:none; background:transparent !important;"
+                allowtransparency="true">
+            </iframe>
+        </div>
+    </div>
+
+    <script>
+        let tickets = [];
+        let charts = {};
+
+        // Initialize the board and charts
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeCharts();
+            loadTicketsFromAPI();
+            setupEventListeners();
+        });
+
+        // Listen for messages from ticket preview
+        window.addEventListener('message', function (event) {
+            console.log('Dashboard received message:', event.data);
+
+            if (event.data && event.data.type === 'ticketUpdated') {
+                console.log('Ticket update detected:', {
+                    ticketId: event.data.ticketId,
+                    oldStatus: event.data.oldStatus,
+                    newStatus: event.data.newStatus
+                });
+
+                loadTicketsFromAPI();
+            }
+        });
+
+        // Simple notification for dashboard
+        function showDashboardNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                padding: 12px 20px;
+                background: #2ecc71;
+                color: white;
+                border-radius: 6px;
+                z-index: 9999;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideDown 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Add animation style if not exists
+        if (!document.querySelector('#dashboard-notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'dashboard-notification-styles';
+            style.textContent = `
+                @keyframes slideDown {
+                    from { transform: translateY(-20px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Load tickets from API
+        async function loadTicketsFromAPI() {
+            try {
+                const response = await fetch('/api/kanban-tickets');
+                const data = await response.json();
+
+                if (data.success) {
+                    tickets = [];
+                    Object.keys(data.tickets).forEach(status => {
+                        data.tickets[status].forEach(ticket => {
+                            tickets.push({
+                                id: ticket.id,
+                                ticket_id: ticket.ticket_id,
+                                ticket_number: ticket.ticket_number,
+                                title: ticket.title,
+                                description: ticket.description,
+                                priority: ticket.priority,
+                                status: ticket.status,
+                                progress_percentage: ticket.progress_percentage,
+                                created_at: ticket.created_at,
+                                completed_at: ticket.completed_at,
+                                column: mapStatusToColumn(ticket.status)
+                            });
+                        });
+                    });
+
+                    renderTickets();
+                    updateTicketCounts();
+                    loadDashboardStats();
+                    loadHistoricalData();
+                }
+            } catch (error) {
+                console.error('Error loading tickets:', error);
+            }
+        }
+
+        // Map database status to column names
+        function mapStatusToColumn(status) {
+            const statusMap = {
+                'new': 'new',
+                'in_progress': 'progress',
+                'review': 'review',
+                'completed': 'completed',
+                'blocked': 'blocked'
+            };
+            return statusMap[status] || 'new';
+        }
+
+        // Map column names back to database status
+        function mapColumnToStatus(column) {
+            const columnMap = {
+                'new': 'new',
+                'progress': 'in_progress',
+                'review': 'review',
+                'completed': 'completed',
+                'blocked': 'blocked'
+            };
+            return columnMap[column] || 'new';
+        }
+
+        // Load dashboard statistics
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard-stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    updateDashboardTiles(data.stats);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load historical data for charts
+        async function loadHistoricalData() {
+            try {
+                const response = await fetch('/api/historical-stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    updateChartsWithRealData(data);
+                }
+            } catch (error) {
+                console.error('Error loading historical data:', error);
+            }
+        }
+
+        // Update charts with real historical data
+        function updateChartsWithRealData(data) {
+            if (charts.new && data.new_tickets) {
+                charts.new.data.labels = data.new_tickets.labels;
+                charts.new.data.datasets[0].data = data.new_tickets.values;
+                charts.new.update('none');
+            }
+
+            if (charts.completed && data.completed_tickets) {
+                charts.completed.data.labels = data.completed_tickets.labels;
+                charts.completed.data.datasets[0].data = data.completed_tickets.values;
+                charts.completed.update('none');
+            }
+        }
+
+        // Update dashboard tiles with real data
+        function updateDashboardTiles(stats) {
+            const tiles = stats.tiles;
+
+            if (tiles.NEW !== undefined) {
+                const newValue = document.querySelector('.stat-card:nth-child(1) .stat-main-value');
+                if (newValue) newValue.textContent = tiles.NEW.count;
+            }
+
+            if (tiles.IN_PROGRESS !== undefined) {
+                const progressValue = document.querySelector('.stat-card:nth-child(2) .stat-main-value');
+                if (progressValue) {
+                    progressValue.textContent = tiles.IN_PROGRESS.count;
+                    progressValue.offsetHeight;
+                }
+            }
+
+            if (tiles.COMPLETED !== undefined) {
+                const completedValue = document.querySelector('.stat-card:nth-child(3) .stat-main-value');
+                if (completedValue) completedValue.textContent = tiles.COMPLETED.count;
+            }
+
+            if (tiles.ON_HOLD !== undefined) {
+                const onHoldValue = document.querySelector('.stat-card:nth-child(4) .stat-main-value');
+                if (onHoldValue) onHoldValue.textContent = tiles.ON_HOLD.count;
+
+                if (tiles.ON_HOLD.categories) {
+                    updateOnHoldCategories(tiles.ON_HOLD.categories);
+                }
+            }
+
+            if (stats.completion_status !== undefined) {
+                const percentageEl = document.querySelector('.circular-percentage');
+                if (percentageEl) {
+                    percentageEl.textContent = stats.completion_status + '%';
+                }
+
+                const subtitleEl = document.querySelector('.stat-card:nth-child(2) .stat-subtitle');
+                if (subtitleEl) {
+                    subtitleEl.innerHTML = `Average progress <span class="stat-change neutral">across active projects</span>`;
+                }
+
+                updateCircularChart(stats.completion_status);
+            }
+        }
+
+        // Update ON HOLD category progress bars
+        function updateOnHoldCategories(categories) {
+            const progressContainer = document.querySelector('.stat-card:nth-child(4) .progress-container');
+            if (!progressContainer) return;
+
+            const categoryOrder = [
+                { key: 'Pending Reviews', color: 'purple' },
+                { key: 'Access Issue', color: 'blue' },
+                { key: 'Code Quality', color: 'green' },
+                { key: 'Other', color: 'orange' }
+            ];
+
+            let html = '';
+            categoryOrder.forEach(({ key, color }) => {
+                const percentage = categories[key] || 0;
+                html += `
+                    <div class="progress-label">
+                        <span>${key}</span>
+                        <span>${percentage}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${color}" style="width: ${percentage}%"></div>
+                    </div>
+                `;
+            });
+
+            progressContainer.innerHTML = html;
+        }
+
+        // Update circular chart with new percentage
+        function updateCircularChart(percentage) {
+            if (charts.progressCircular) {
+                charts.progressCircular.data.datasets[0].data = [percentage, 100 - percentage];
+                charts.progressCircular.update('none');
+            }
+        }
+
+        // Initialize Charts with proper month labels
+        function initializeCharts() {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const currentDate = new Date();
+            const last6Months = [];
+
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                last6Months.push(monthNames[d.getMonth()]);
+            }
+
+            // NEW Tickets Chart (Line Chart)
+            const newCtx = document.getElementById('newChart').getContext('2d');
+            charts.new = new Chart(newCtx, {
+                type: 'line',
+                data: {
+                    labels: last6Months,
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0, 0],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#3498db',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#2c3e50',
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return 'New Tickets: ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: { display: false },
+                            ticks: {
+                                color: '#7f8c8d',
+                                font: { size: 10 }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#7f8c8d',
+                                font: { size: 10 },
+                                padding: 5
+                            }
+                        }
+                    }
+                }
+            });
+
+            // IN PROGRESS Circular Chart (Doughnut)
+            const progressCircularCtx = document.getElementById('progressCircularChart').getContext('2d');
+            charts.progressCircular = new Chart(progressCircularCtx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: ['#3498db', '#ecf0f1'],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    animation: {
+                        duration: 0
+                    }
+                }
+            });
+
+            // COMPLETED Chart (Bar Chart)
+            const completedCtx = document.getElementById('completedChart').getContext('2d');
+            charts.completed = new Chart(completedCtx, {
+                type: 'bar',
+                data: {
+                    labels: last6Months,
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0, 0],
+                        backgroundColor: '#2ecc71',
+                        borderColor: '#27ae60',
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#27ae60',
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return 'Completed: ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: { display: false },
+                            ticks: {
+                                color: '#7f8c8d',
+                                font: { size: 10 }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#7f8c8d',
+                                font: { size: 10 },
+                                padding: 5
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTickets() {
+            document.querySelectorAll('.ticket-list').forEach(list => {
+                list.innerHTML = '';
+            });
+
+            tickets.forEach(ticket => {
+                const ticketElement = createTicketElement(ticket);
+                const columnId = `${ticket.column}-tickets`;
+                const column = document.getElementById(columnId);
+                if (column) {
+                    column.appendChild(ticketElement);
+                }
+            });
+        }
+
+        function createTicketElement(ticket) {
+            const ticketDiv = document.createElement('div');
+            ticketDiv.className = `ticket priority-${ticket.priority}`;
+            ticketDiv.setAttribute('draggable', 'true');
+            ticketDiv.setAttribute('data-id', ticket.id);
+
+            ticketDiv.onclick = () => openTicketIframe(ticket);
+
+            let priorityText = ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1);
+            const displayNumber = ticket.ticket_number || `#${ticket.id}`;
+
+            ticketDiv.innerHTML = `
+                <div class="ticket-header">
+                    <span class="ticket-number">${displayNumber}</span>
+                </div>
+                <div class="ticket-title">${ticket.title}</div>
+                ${ticket.description ? `<div class="ticket-description">${ticket.description.substring(0, 60)}...</div>` : ''}
+                <div class="ticket-meta">
+                    <div>${priorityText} Priority</div>
+                    ${ticket.progress_percentage ? `<div class="progress-badge">${ticket.progress_percentage}%</div>` : ''}
+                </div>
+            `;
+
+            return ticketDiv;
+        }
+
+        function setupDragAndDrop() {
+            let draggedTicket = null;
+
+            document.addEventListener('dragstart', function (e) {
+                if (e.target.classList.contains('ticket')) {
+                    draggedTicket = e.target;
+                    e.target.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', e.target.getAttribute('data-id'));
+                }
+            });
+
+            document.addEventListener('dragend', function (e) {
+                if (e.target.classList.contains('ticket')) {
+                    e.target.classList.remove('dragging');
+                    draggedTicket = null;
+                }
+
+                document.querySelectorAll('.ticket-list').forEach(list => {
+                    list.classList.remove('drag-over');
+                });
+            });
+
+            document.querySelectorAll('.ticket-list').forEach(list => {
+                list.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                    this.classList.add('drag-over');
+                });
+
+                list.addEventListener('dragleave', function () {
+                    this.classList.remove('drag-over');
+                });
+
+                list.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+
+                    if (draggedTicket) {
+                        const ticketId = parseInt(draggedTicket.getAttribute('data-id'));
+                        const newColumn = this.id.replace('-tickets', '');
+
+                        const ticket = tickets.find(t => t.id === ticketId);
+                        if (ticket) {
+                            const oldStatus = ticket.status;
+                            const newStatus = mapColumnToStatus(newColumn);
+
+                            ticket.column = newColumn;
+                            ticket.status = newStatus;
+                            this.appendChild(draggedTicket);
+
+                            updateTicketCounts();
+                            updateTicketStatus(ticketId, newStatus);
+                        }
+                    }
+                });
+            });
+        }
+
+        // Update ticket status in backend
+        async function updateTicketStatus(ticketId, newStatus) {
+            try {
+                const response = await fetch(`/api/kanban-tickets/${ticketId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    await loadDashboardStats();
+                    await loadHistoricalData();
+                } else {
+                    console.error('Failed to update ticket status:', data.error);
+                }
+            } catch (error) {
+                console.error('Error updating ticket status:', error);
+            }
+        }
+
+        function updateTicketCounts() {
+            const counts = {
+                new: 0,
+                progress: 0,
+                blocked: 0,
+                review: 0,
+                completed: 0
+            };
+
+            tickets.forEach(ticket => {
+                counts[ticket.column]++;
+            });
+
+            document.querySelectorAll('.column').forEach(column => {
+                const columnId = column.id.replace('-column', '');
+                const countElement = column.querySelector('.ticket-count');
+                if (countElement) {
+                    countElement.textContent = counts[columnId];
+                }
+            });
+        }
+
+        function setupEventListeners() {
+            setupDragAndDrop();
+
+            const saveBtn = document.querySelector('.btn-primary');
+            saveBtn?.addEventListener('click', function () {
+                alert('Changes saved!');
+            });
+
+            const resetBtn = document.querySelector('.btn-secondary');
+            resetBtn?.addEventListener('click', function () {
+                if (confirm('Are you sure you want to reset all tickets to New?')) {
+                    resetAllTickets();
+                }
+            });
+        }
+
+        // Function to open ticket preview in modal
+        function openTicketIframe(ticketData) {
+            const overlay = document.getElementById('iframeOverlay');
+            const iframe = document.getElementById('ticketIframe');
+
+            const ticketIdentifier = ticketData.ticket_id || ticketData.id;
+
+            if (!ticketIdentifier) {
+                console.error('No ticket identifier found:', ticketData);
+                alert('Cannot open ticket preview - no ticket ID found');
+                return;
+            }
+
+            overlay.style.display = 'flex';
+
+            const previewUrl = `/ticket-preview?ticket_id=${encodeURIComponent(ticketIdentifier)}`;
+            console.log('Loading ticket preview:', previewUrl);
+
+            iframe.src = previewUrl;
+
+            iframe.style.opacity = '0.5';
+            iframe.onload = function () {
+                iframe.style.opacity = '1';
+                console.log('Ticket preview loaded');
+            };
+        }
+
+        // Function that the Iframe can call to close itself
+        function closeTicketModal() {
+            document.getElementById('iframeOverlay').style.display = 'none';
+            document.getElementById('ticketIframe').src = '';
+        }
+
+        // Reset all tickets to "New" status
+        async function resetAllTickets() {
+            try {
+                const response = await fetch('/api/kanban-tickets/reset', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    await loadTicketsFromAPI();
+                } else {
+                    console.error('Failed to reset tickets:', data.error);
+                }
+            } catch (error) {
+                console.error('Error resetting tickets:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>
