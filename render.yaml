@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: keycodes-ai-assistant
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 2
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+        description: "Your Gemini API key from Google AI Studio"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: 10000
+      - key: FLASK_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: keycodes-db
+          property: connectionString
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
